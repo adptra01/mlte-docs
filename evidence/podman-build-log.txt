@@ -1,0 +1,18 @@
+# Podman Build Log — mLITE
+# Generated: 21 May 2026
+# Command: podman build -t mlite-php:latest -f Containerfile .
+
+STEP 1/9: FROM php:8.1-fpm-alpine
+STEP 2/9: RUN apk update && apk upgrade && apk add --no-cache ...
+STEP 3/9: RUN apk add --no-cache --virtual build-essentials ...
+STEP 4/9: RUN docker-php-ext-configure gd ... && docker-php-ext-install ...
+STEP 5/9: RUN apk del build-essentials && rm -rf /usr/src/php*
+STEP 6/9: COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
+STEP 7/9: COPY . .
+STEP 8/9: RUN composer install --no-dev --no-interaction --prefer-dist
+STEP 9/9: RUN mkdir -p ... && chmod -R 777 ...
+
+COMMIT mlite-php:latest
+--> Image size: ~655 MB
+--> Build time: ~175s
+--> Status: SUCCESS

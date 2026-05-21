@@ -1,0 +1,43 @@
+# Git
+.git/
+.gitattributes
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Environment
+.env
+
+# Docker
+docker/logs/
+
+# Runtime
+tmp/
+admin/tmp/
+
+# Node
+node_modules/
+
+# Composer
+vendor/
+composer.lock
+
+# SQLite database (jika ada)
+systems/data/*.sdb
+systems/data/*.db
+
+# Backup
+backups/
+
+# Logs
+*.log

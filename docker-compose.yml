@@ -1,0 +1,90 @@
+version: "3"
+
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx.Dockerfile
+    image: nginx:alpine
+    ports:
+      - "${APP_PORT:-8088}:80"
+    networks:
+      - internal
+    volumes:
+      - ./:/var/www/html/
+      - php_backups:/var/www/html/backups 
+      - php_uploads:/var/www/html/uploads
+      - php_systems_data:/var/www/html/systems/data
+      - ./docker/logs/nginx:/var/log/nginx/
+    depends_on:
+      - php
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  php:
+    image: php:8.1-fpm-alpine
+    user: root
+    build:
+      context: .
+      dockerfile: docker/php.Dockerfile
+    networks:
+      - internal
+    environment:
+      - DBDRIVER=${DB_DRIVER:-mysql}
+      - MYSQLHOST=${DB_HOST:-mysql}
+      - MYSQLPORT=${DB_PORT:-3306}
+      - MYSQLUSER=${DB_USERNAME:-mlite}
+      - MYSQLPASSWORD=${DB_PASSWORD:-mlite}
+      - MYSQLDATABASE=${DB_DATABASE:-mlite_db}
+      - APPURL=http://localhost:${APP_PORT:-8088}/uploads
+    volumes:
+      - ./:/var/www/html/
+      - php_backups:/var/www/html/backups 
+      - php_uploads:/var/www/html/uploads 
+      - php_systems_data:/var/www/html/systems/data 
+    command: sh -c "composer install --no-dev --no-interaction --prefer-dist && mkdir -p /var/www/html/backups /var/www/html/uploads /var/www/html/systems/data /var/www/html/tmp /var/www/html/admin/tmp && chmod -R 777 /var/www/html/backups /var/www/html/uploads /var/www/html/systems/data /var/www/html/tmp /var/www/html/admin/tmp && php-fpm"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "php-fpm", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  mysql:
+    image: mysql:8.0
+    command: --sql-mode=""
+    restart: unless-stopped
+    profiles:
+      - mysql_enabled
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword123}
+      MYSQL_DATABASE: ${DB_DATABASE:-mlite_db}
+      MYSQL_USER: ${DB_USERNAME:-mlite}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-mlite}
+    expose:
+      - 3306
+    networks:
+      - internal
+    volumes:
+      - mysql_data:/var/lib/mysql  
+      - ./mlite_db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootpassword123}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  php_backups:
+  php_uploads:
+  php_systems_data:
+  php_plugins:
+  mysql_data:

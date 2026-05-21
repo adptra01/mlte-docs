@@ -1,0 +1,40 @@
+# NOTICE — Atribusi dan Lisensi Pihak Ketiga
+
+Aplikasi mLITE menggunakan komponen pihak ketiga dengan lisensi sebagai berikut:
+
+## Runtime Dependencies (Composer)
+
+| Paket | Lisensi | Sumber |
+|-------|---------|--------|
+| nullpunkt/lz-string-php | MIT | https://github.com/nullpunkt/lz-string-php |
+| phpseclib/phpseclib | MIT | https://github.com/phpseclib/phpseclib |
+| phpmailer/phpmailer | LGPL-2.1 | https://github.com/PHPMailer/PHPMailer |
+| mpdf/mpdf | GPL-3.0 | https://github.com/mpdf/mpdf |
+| workerman/workerman | MIT | https://github.com/walkor/workerman |
+| mpdf/qrcode | MIT | https://github.com/mpdf/qrcode |
+| halaxa/json-machine | Apache-2.0 | https://github.com/halaxa/json-machine |
+
+## Docker Base Images
+
+| Image | Lisensi | Sumber |
+|-------|---------|--------|
+| php:8.1-fpm-alpine | PHP License | https://hub.docker.com/_/php |
+| nginx:alpine | BSD-2-Clause | https://hub.docker.com/_/nginx |
+| mysql:8.0 | GPL-2.0 | https://hub.docker.com/_/mysql |
+| composer:latest | MIT | https://hub.docker.com/_/composer |
+
+## Frontend Libraries (bundled)
+
+| Library | Lisensi | Keterangan |
+|---------|---------|------------|
+| Bootstrap 5 | MIT | CSS framework |
+| jQuery | MIT | JavaScript library |
+| Font Awesome | MIT/Icons: CC BY 4.0 | Icon set |
+| Chart.js | MIT | Charting library |
+| DataTables | MIT | Table plugin |
+
+## Catatan
+
+- mLITE sendiri dilisensikan di bawah **GNU General Public License v3.0**
+- Beberapa plugin mungkin memiliki lisensi terpisah
+- Untuk informasi lebih lanjut, lihat file LICENSE masing-masing komponen

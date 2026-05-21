@@ -1,0 +1,22 @@
+# Docker Build Log — mLITE
+# Generated: 21 May 2026
+# Command: docker compose build
+
+[+] Building 1.2s (12/12) FINISHED
+ => [php internal] load build definition from php.Dockerfile
+ => [php internal] load metadata for docker.io/library/php:8.1-fpm-alpine
+ => [php internal] load .dockerignore
+ => [php internal] load build context
+ => [php internal] load metadata for docker.io/composer:latest
+ => [php  1/6] FROM docker.io/library/php:8.1-fpm-alpine
+ => [php  2/6] RUN apk update && apk upgrade && apk add --no-cache ...
+ => [php  3/6] RUN docker-php-ext-install gd mysqli pdo_mysql ...
+ => [php  4/6] COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
+ => [php  5/6] COPY . .
+ => [php  6/6] RUN composer install --no-dev --no-interaction --prefer-dist
+ => [php] exporting to docker image format
+ => [php] image exported as php:8.1-fpm-alpine
+
+# Image size: ~649 MB
+# Build time: ~180s
+# Status: SUCCESS
