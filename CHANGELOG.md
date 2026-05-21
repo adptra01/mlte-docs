@@ -144,6 +144,15 @@ Proyek ini mendokumentasikan dan melakukan Dockerisasi terhadap aplikasi **mLITE
 - **Note**: `paket_operasi` required 34 columns — fixed column count mismatch (omloop4/omloop5 added)
 - **Note**: Import uses `INSERT IGNORE` to skip duplicate key errors from existing data
 
+### Perubahan di v2.7.0
+
+- **New**: 7 indexes pada 5 tabel kritis (reg_periksa, mlite_billing, pemeriksaan_ralan, pasien, kamar_inap)
+- **New**: MySQL InnoDB tuning — `buffer_pool_size=256M`, `tmp_table_size=64M`, `join_buffer_size=512K`
+- **New**: Custom `my.cnf` — `mysql/my.cnf` di-mount ke container MySQL
+- **Important**: Index `reg_periksa(tgl_registrasi)` — query harian tanpa full table scan
+- **Important**: Index `mlite_billing(no_rawat)` — lookup billing per kunjungan (sebelumnya tanpa index!)
+- **Updated**: `docker/compose.test.yaml` — mount `mysql/my.cnf` ke `/etc/mysql/conf.d/custom.cnf`
+
 ### Perubahan di v2.6.0
 
 - **New**: Redis 7.4.9 — session storage in-memory (no filesystem I/O)
