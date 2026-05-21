@@ -144,6 +144,16 @@ Proyek ini mendokumentasikan dan melakukan Dockerisasi terhadap aplikasi **mLITE
 - **Note**: `paket_operasi` required 34 columns — fixed column count mismatch (omloop4/omloop5 added)
 - **Note**: Import uses `INSERT IGNORE` to skip duplicate key errors from existing data
 
+### Perubahan di v2.5.0
+
+- **New**: APCu extension — user cache 64MB untuk CodeIgniter 4
+- **New**: Opcache tuning — `memory_consumption=128`, `max_accelerated_files=10000`, `revalidate_freq=2`
+- **New**: PHP-FPM tuning — `max_children=15`, `start_servers=4`, `max_requests=500`
+- **New**: Composer autoload optimization — `composer dump-autoload -o` (768 classes)
+- **Performance**: Loading sistem diharapkan lebih responsif dengan opcache + APCu
+- **Updated**: `Dockerfile` — APCu installation + konfigurasi opcache/apcu/fpm
+- **Updated**: `docker/php.quick.Dockerfile` — APCu installation + konfigurasi opcache/apcu/fpm
+
 ### Perubahan di v2.4.0
 
 - **New**: `docker/operational_seed.sql` — data dummy transaksional untuk simulasi operasional 4 hari

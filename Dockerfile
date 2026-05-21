@@ -54,8 +54,42 @@ RUN apk add --no-cache --virtual build-essentials \
     docker-php-ext-install bcmath && \
     docker-php-ext-install mbstring && \
     docker-php-ext-install pcntl && \
+    pecl install apcu && \
+    docker-php-ext-enable apcu && \
     apk del build-essentials && \
     rm -rf /usr/src/php*
+
+# Opcache configuration
+RUN { \
+    echo 'zend_extension=opcache'; \
+    echo 'opcache.enable=1'; \
+    echo 'opcache.memory_consumption=128'; \
+    echo 'opcache.interned_strings_buffer=8'; \
+    echo 'opcache.max_accelerated_files=10000'; \
+    echo 'opcache.revalidate_freq=2'; \
+    echo 'opcache.fast_shutdown=1'; \
+    echo 'opcache.enable_cli=0'; \
+    echo 'opcache.validate_timestamps=1'; \
+} > /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini
+
+# APCu configuration
+RUN { \
+    echo 'extension=apcu.so'; \
+    echo 'apcu.enabled=1'; \
+    echo 'apcu.shm_size=64M'; \
+    echo 'apcu.ttl=7200'; \
+    echo 'apcu.gc_ttl=3600'; \
+    echo 'apcu.enable_cli=0'; \
+} > /usr/local/etc/php/conf.d/docker-php-ext-apcu.ini
+
+# PHP-FPM tuning
+RUN { \
+    echo 'pm.max_children = 15'; \
+    echo 'pm.start_servers = 4'; \
+    echo 'pm.min_spare_servers = 2'; \
+    echo 'pm.max_spare_servers = 6'; \
+    echo 'pm.max_requests = 500'; \
+} > /usr/local/etc/php-fpm.d/zz-tuning.conf
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
