@@ -144,6 +144,13 @@ Proyek ini mendokumentasikan dan melakukan Dockerisasi terhadap aplikasi **mLITE
 - **Note**: `paket_operasi` required 34 columns — fixed column count mismatch (omloop4/omloop5 added)
 - **Note**: Import uses `INSERT IGNORE` to skip duplicate key errors from existing data
 
+### Perubahan di v2.5.1
+
+- **New**: Gzip compression on nginx (text/css/js/json/svg — kompresi ~71%)
+- **New**: `CI_ENVIRONMENT=production` — disable debugging toolbar CI4
+- **Updated**: `docker/nginx/default.conf` — gzip on + static asset caching 30d
+- **Updated**: `.env` — added `CI_ENVIRONMENT=production`
+
 ### Perubahan di v2.5.0
 
 - **New**: APCu extension — user cache 64MB untuk CodeIgniter 4
