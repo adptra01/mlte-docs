@@ -83,6 +83,7 @@ Proyek ini mendokumentasikan dan melakukan Dockerisasi terhadap aplikasi **mLITE
 | 1.1.0 | 21 Mei 2026 | Penambahan Podman support |
 | **2.0.0** | **21 Mei 2026** | **Restruktur total sesuai format Fase A-I** |
 | **2.1.0** | **21 Mei 2026** | **Live Podman test — installer page verified** |
+| **2.2.0** | **21 Mei 2026** | **MySQL mode OK — SQL bug fixed, full dashboard** |
 
 ### Perubahan di v1.1.0
 
@@ -120,3 +121,14 @@ Proyek ini mendokumentasikan dan melakukan Dockerisasi terhadap aplikasi **mLITE
 - **Fixed**: Nginx custom config applied via `podman cp` (workaround for compose `image:` tag skipping build)
 - **Evidence**: Screenshot of installer page captured to `evidence/screenshots/installer-page.png`
 - **Note**: Docker test belum bisa diverifikasi langsung (tidak ada Docker di lingkungan Windows ini)
+
+### Perubahan di v2.2.0
+
+- **MySQL mode berhasil** — app berfungsi penuh dengan MySQL database
+- **Fixed**: SQL syntax error di `mlite_db.sql` line 1653 — `'manufacture_date'` → `` `manufacture_date` `` (single quote vs backtick)
+- **Fixed**: SQL syntax error di `mlite_db.sql` line 1654 — `'expiration_date'` → `` `expiration_date` ``
+- **Bug**: SQLite mode gagal karena MySQL dump tidak kompatibel dengan SQLite (234 tabel, mlite_settings tidak terbuat)
+- **Root cause**: Syntax error di SQL dump menyebabkan MySQL import berhenti di line 1646, tabel setelahnya (termasuk `mlite_settings`) tidak terbuat
+- **Security**: `install.php` aman di-rename (app tidak redirect ke sana setelah MySQL terkonfigurasi)
+- **Evidence**: Screenshot dashboard login ke `evidence/screenshots/dashboard.png`
+- **Login**: admin/admin berhasil — dashboard mLITE tampil

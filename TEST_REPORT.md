@@ -149,6 +149,21 @@
 
 ---
 
+## 2.9 SQLite vs MySQL — Key Findings
+
+| Aspek | SQLite | MySQL |
+|-------|--------|-------|
+| **Install** | ✅ "Berhasil!" (false positive) | ✅ Re-import with fixed SQL |
+| **Tables created** | Partial (some missing) | ✅ All 234 tables |
+| **mlite_settings** | ❌ Tidak terbuat | ✅ 214 rows |
+| **App behavior** | ❌ Redirect loop ke install.php | ✅ Redirect ke /admin/dashboard/main |
+| **Login** | N/A | ✅ admin/admin berhasil |
+| **Root cause** | MySQL dump not SQLite-compatible | SQL syntax error at line 1646 (`'manufacture_date'` instead of `` `manufacture_date` ``) |
+
+**Kesimpulan**: SQLite mode di mLITE v6.3.0 memiliki bug — MySQL dump tidak sepenuhnya kompatibel dengan SQLite. Mode MySQL adalah primari driver yang didukung penuh. SQL dump original juga memiliki syntax error yang menyebabkan import MySQL gagal di line 1646.
+
+---
+
 ## 3. Comparison Summary
 
 | Aspek | Docker | Podman | Selisih |
@@ -174,6 +189,8 @@
 | ERR-02 | Podman | Nginx config not applied via compose build | MEDIUM | Mitigated | `image: nginx:alpine` in compose skips build; use `podman cp` or volume mount for `default.conf` |
 | ERR-03 | Both | Composer install on startup slow | MEDIUM | Accepted | Pre-built image optimization needed |
 | ERR-04 | Podman | PHP ext-gd/ext-zip compilation slow | MEDIUM | Accepted | ~5 min build time from source |
+| ERR-05 | Both | SQL dump syntax error line 1653 | HIGH | Fixed | `'manufacture_date'` → `` `manufacture_date` `` — caused all tables after line 1646 to be missing |
+| ERR-06 | Both | SQLite mode tidak berfungsi penuh | HIGH | Known | MySQL dump tidak kompatibel dengan SQLite; gunakan MySQL mode |
 
 ---
 
