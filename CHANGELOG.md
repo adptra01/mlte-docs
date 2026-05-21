@@ -156,4 +156,7 @@ Proyek ini mendokumentasikan dan melakukan Dockerisasi terhadap aplikasi **mLITE
 - **New**: 1 rawat inap (kamar_inap) — Dewi Lestari di Kamar Melati 1
 - **New**: 8 billing records (mlite_billing)
 - **Fixed**: `pemeriksaan_ralan` — ditambahkan kolom `evaluasi` yang sebelumnya terlewat
+- **New**: `mlite/docker/mlite_db_dump_with_seed.sql` — full database export (438KB, 8496 baris) — struktur + semua data
+- **New**: `mlite/docker/seed_data.sql` — data dummy master tables (mandiri)
+- **New**: `mlite/docker/operational_seed.sql` — data dummy operasional (mandiri)
 - **Updated**: `TEST_REPORT.md` — test cases P-29 to P-38, skenario kunjungan, coverage table
