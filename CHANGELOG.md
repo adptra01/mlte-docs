@@ -144,6 +144,16 @@ Proyek ini mendokumentasikan dan melakukan Dockerisasi terhadap aplikasi **mLITE
 - **Note**: `paket_operasi` required 34 columns — fixed column count mismatch (omloop4/omloop5 added)
 - **Note**: Import uses `INSERT IGNORE` to skip duplicate key errors from existing data
 
+### Perubahan di v2.6.0
+
+- **New**: Redis 7.4.9 — session storage in-memory (no filesystem I/O)
+- **New**: phpredis 6.3.0 extension installed in PHP container
+- **New**: Session handler `redis` — `save_path=tcp://redis:6379?auth=mlite_redis_pass&prefix=mlite_session_`
+- **New**: Redis password authentication + AOF persistence via volume
+- **Updated**: `docker/compose.test.yaml` — added `redis` service + `redis_data` volume
+- **Updated**: `docker/php.quick.Dockerfile` — pecl install redis + redis-session.ini
+- **Updated**: `docker/.env` — added `REDIS_PASSWORD=mlite_redis_pass`
+
 ### Perubahan di v2.5.1
 
 - **New**: Gzip compression on nginx (text/css/js/json/svg — kompresi ~71%)

@@ -56,6 +56,8 @@ RUN apk add --no-cache --virtual build-essentials \
     docker-php-ext-install pcntl && \
     pecl install apcu && \
     docker-php-ext-enable apcu && \
+    pecl install redis && \
+    docker-php-ext-enable redis && \
     apk del build-essentials && \
     rm -rf /usr/src/php*
 
