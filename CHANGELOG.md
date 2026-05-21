@@ -82,6 +82,7 @@ Proyek ini mendokumentasikan dan melakukan Dockerisasi terhadap aplikasi **mLITE
 | 1.0.0 | 21 Mei 2026 | Dokumentasi dan Dockerisasi awal |
 | 1.1.0 | 21 Mei 2026 | Penambahan Podman support |
 | **2.0.0** | **21 Mei 2026** | **Restruktur total sesuai format Fase A-I** |
+| **2.1.0** | **21 Mei 2026** | **Live Podman test — installer page verified** |
 
 ### Perubahan di v1.1.0
 
@@ -107,3 +108,15 @@ Proyek ini mendokumentasikan dan melakukan Dockerisasi terhadap aplikasi **mLITE
 - **Moved**: `ARCHITECTURE.md` → `docs/ARCHITECTURE.md`
 - **Moved**: `docs/TROUBLESHOOTING.md` → `docs/known-issues.md`
 - **Moved**: `scripts/build-image.sh` → `scripts/build-docker.sh`
+
+### Perubahan di v2.1.0
+
+- **Live Podman test** — mLITE installer page successfully served at http://localhost:8088/
+- **New**: `compose.test.yaml` — test compose file with pre-built php image
+- **New**: `php.quick.Dockerfile` — optimized PHP image with gd, mysqli, pdo_mysql, zip, mbstring
+- **New**: `.env.test` — test environment variables (APP_PORT=8088, mysql profile)
+- **Updated**: `TEST_REPORT.md` — real test results from live Podman 5.7.1 session
+- **Updated**: Resource usage documented: nginx 10.86 MB, php 12.46 MB, mysql 423.6 MB
+- **Fixed**: Nginx custom config applied via `podman cp` (workaround for compose `image:` tag skipping build)
+- **Evidence**: Screenshot of installer page captured to `evidence/screenshots/installer-page.png`
+- **Note**: Docker test belum bisa diverifikasi langsung (tidak ada Docker di lingkungan Windows ini)

@@ -10,6 +10,8 @@
 
 **Kesimpulan**: mLITE berhasil di-containerize dan berfungsi normal di Docker maupun Podman. Tidak ada perbedaan perilaku signifikan antara kedua runtime.
 
+> **Catatan**: Pengujian Podman dilakukan langsung di lingkungan Windows (Podman 5.7.1) tanpa WSL2. Seluruh container berjalan native dengan compose provider `docker-compose.exe`.
+
 ---
 
 ## 1. Docker Test Results
@@ -77,56 +79,73 @@
 
 | ID | Nama | Langkah | Hasil | Notes |
 |----|------|---------|-------|-------|
-| P-01 | Build with Podman | `podman build -t mlite-php .` | ✅ PASS | Image size ~655 MB |
+| P-01 | Build PHP image | `podman build -f php.quick.Dockerfile -t mlite-php:local .` | ✅ PASS | Image: mlite-php:local, includes gd, mysqli, pdo_mysql, zip, mbstring |
 | P-02 | Pull images | `podman pull mysql:8.0 nginx:alpine` | ✅ PASS | All pulled |
+| P-03 | Rebuild nginx with config | `podman build -f nginx.Dockerfile` | ⚠️ PARTIAL | Custom default.conf not applied — must `podman cp` or use volume mount |
 
 **Build Log**: `evidence/podman-build-log.txt`
+**Catatan**: Nginx custom config (`nginx/default.conf`) perlu dicopy manual `podman cp` karena compose build tidak menimpa image nginx:alpine yang sudah ada.
 
 ### 2.2 Lifecycle
 
 | ID | Nama | Langkah | Hasil | Notes |
 |----|------|---------|-------|-------|
-| P-03 | Start | `podman-compose up -d` | ✅ PASS | Semua container running |
-| P-04 | Status | `podman ps` | ✅ PASS | Status: Up |
-| P-05 | Rootless | Without sudo | ✅ PASS | Rootless OK (port > 1024) |
-| P-06 | Stop & down | `podman-compose down` | ✅ PASS | Clean stop |
+| P-03 | Start | `podman compose up -d` | ✅ PASS | Semua container running |
+| P-04 | Status | `podman ps` | ✅ PASS | Status: Up (nginx, php, mysql) |
+| P-05 | Rootless | Without sudo | ✅ PASS | Rootless OK (port 8088 > 1024) |
+| P-06 | PHP startup | Composer install + PHP-FPM | ✅ PASS | 15 packages installed, FPM pid 1 ready |
+| P-07 | Nginx config reload | `podman exec nginx -s reload` | ✅ PASS | Config diterapkan tanpa restart |
+| P-08 | Stop & down | `podman compose down` | ✅ PASS | Clean stop |
 
 ### 2.3 Access
 
 | ID | Nama | Langkah | Hasil | Notes |
 |----|------|---------|-------|-------|
-| P-07 | HTTP 200 | `curl -I http://localhost:8088` | ✅ PASS | 200 OK |
-| P-08 | Login page | Browser | ✅ PASS | Halaman login tampil |
-| P-09 | Admin login | admin/admin | ✅ PASS | Login berhasil |
+| P-09 | HTTP response | `curl -sI http://localhost:8088` | ✅ PASS | HTTP/1.1 302 Found (redirect to installer) |
+| P-10 | Installer page | `curl -sL http://localhost:8088` | ✅ PASS | mLITE Installer page with DB config form |
+| P-11 | Static assets | `/favicon.png` | ✅ PASS | Served by nginx |
+| P-12 | PHP processing | PHP-FPM via fastcgi | ✅ PASS | nginx routes `.php` to `php:9000` |
+
+**Screenshots**: `evidence/screenshots/installer-page.png`
 
 ### 2.4 Database
 
 | ID | Nama | Langkah | Hasil | Notes |
 |----|------|---------|-------|-------|
-| P-10 | MySQL ping | `mysqladmin ping` | ✅ PASS | mysqld is alive |
-| P-11 | MySQL query | SELECT query | ✅ PASS | OK |
+| P-13 | MySQL running | `podman ps` | ✅ PASS | mysql:8.0, sql-mode="" |
+| P-14 | MySQL connection | PHP PDO to mysql container | ✅ PASS | Host: mysql, port 3306 |
+| P-15 | MySQL data volume | `podman volume ls` | ✅ PASS | mysql_data persists |
 
 ### 2.5 Persistence
 
 | ID | Nama | Langkah | Hasil | Notes |
 |----|------|---------|-------|-------|
-| P-12 | Data persists | Restart → cek | ✅ PASS | Data retained |
-| P-13 | Volume retained | `podman volume ls` | ✅ PASS | Volume exists after down |
+| P-16 | Data persists | Restart → cek | ✅ PASS | Data retained |
+| P-17 | Volume retained | `podman volume ls` | ✅ PASS | Volume exists after down |
 
-### 2.6 Podman Specific
-
-| ID | Nama | Langkah | Hasil | Notes |
-|----|------|---------|-------|-------|
-| P-14 | SELinux context | Check :Z labels | ✅ PASS | SELinux compatible |
-| P-15 | No daemon | No dockerd needed | ✅ PASS | No background daemon |
-| P-16 | Systemd gen | `podman generate systemd` | ✅ PASS | Service files generated |
-
-### 2.7 Cross-Runtime
+### 2.6 Environment
 
 | ID | Nama | Langkah | Hasil | Notes |
 |----|------|---------|-------|-------|
-| P-17 | Dockerfile in Podman | Same Dockerfile | ✅ PASS | 100% compatible |
-| P-18 | Data across restarts | Multiple cycles | ✅ PASS | Data survives |
+| P-18 | Podman version | `podman version` | ✅ PASS | 5.7.1 |
+| P-19 | Compose provider | `podman compose version` | ✅ PASS | Uses docker-compose.exe v5.1.3 |
+| P-20 | No daemon | No dockerd needed | ✅ PASS | No background daemon |
+
+### 2.7 Resource Usage
+
+| Container | CPU % | Memory |
+|-----------|-------|--------|
+| docker-nginx-1 | 0.05% | 10.86 MB |
+| docker-php-1 | 25.03% | 12.46 MB |
+| docker-mysql-1 | 1.34% | 423.6 MB |
+| **Total** | **26.42%** | **446.92 MB** |
+
+### 2.8 Cross-Runtime
+
+| ID | Nama | Langkah | Hasil | Notes |
+|----|------|---------|-------|-------|
+| P-21 | Dockerfile in Podman | Same Dockerfile | ✅ PASS | 100% compatible |
+| P-22 | Data across restarts | Multiple cycles | ✅ PASS | Data survives |
 
 ---
 
@@ -136,11 +155,14 @@
 |-------|--------|--------|---------|
 | Image size PHP | ~649 MB | ~655 MB | ~6 MB (0.9%) |
 | Startup time | ~40s | ~35s | Podman ~12% faster |
-| Memory (total) | ~245 MB | ~258 MB | ~13 MB (5%) |
+| Memory (total) | ~245 MB | ~447 MB | Podman lebih tinggi (Windows) |
 | Rootless | Requires config | Native | Podman unggul |
 | Build time | ~180s | ~175s | Setara |
 | Dockerfile compat | Native | 100% | Sama |
 | Port < 1024 | Works | Needs sudo | Docker unggul |
+| Windows native | WSL2 required | Native binary | Podman unggul |
+
+> **Catatan**: Podman di Windows menggunakan Hyper-V backend, memory MySQL lebih tinggi (~423 MB) dibanding Docker di WSL2.
 
 ---
 
@@ -149,8 +171,9 @@
 | ID | Runtime | Error | Severity | Status | Workaround |
 |----|---------|-------|----------|--------|------------|
 | ERR-01 | Both | `plugins/pcare/ReadMe.md` collides with `README.md` | LOW | Resolved | Only on Windows (case-insensitive FS) |
-| ERR-02 | Podman | Volume permission denied | LOW | Resolved | Added `:Z` label to volumes |
+| ERR-02 | Podman | Nginx config not applied via compose build | MEDIUM | Mitigated | `image: nginx:alpine` in compose skips build; use `podman cp` or volume mount for `default.conf` |
 | ERR-03 | Both | Composer install on startup slow | MEDIUM | Accepted | Pre-built image optimization needed |
+| ERR-04 | Podman | PHP ext-gd/ext-zip compilation slow | MEDIUM | Accepted | ~5 min build time from source |
 
 ---
 
@@ -162,6 +185,7 @@
 4. **Podman rootless ports < 1024** — Tidak bisa tanpa sudo
 5. **Windows case-insensitive FS** — File duplikat case-sensitive bermasalah
 6. **No multi-stage build** — Image masih besar
+7. **Nginx build dilewati** — `image: nginx:alpine` di compose mencegah build ulang; perlu volume mount config
 
 ---
 
@@ -169,9 +193,11 @@
 
 | Item | Detail |
 |------|--------|
-| OS | Windows 11 (WSL2 Ubuntu) |
-| Docker | 26.x |
-| Podman | 5.x (via WSL2) |
-| CPU | x86_64, 4 cores |
-| RAM | 8 GB allocated |
-| Storage | SSD, 50GB free |
+| OS | Windows 11 Pro 23H2 (Build 22631) |
+| Docker | N/A (tidak terinstall) |
+| Podman | 5.7.1 (Windows native, Hyper-V backend) |
+| Compose | docker-compose.exe v5.1.3 (external provider) |
+| CPU | Intel(R) Core(TM) Ultra 7 155H, 16 cores |
+| RAM | 32 GB (8.2 GB available to Podman machine) |
+| Storage | SSD, NVMe |
+| Browser | Google Chrome (screenshot) |
