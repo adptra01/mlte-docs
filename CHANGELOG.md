@@ -85,6 +85,7 @@ Proyek ini mendokumentasikan dan melakukan Dockerisasi terhadap aplikasi **mLITE
 | **2.1.0** | **21 Mei 2026** | **Live Podman test — installer page verified** |
 | **2.2.0** | **21 Mei 2026** | **MySQL mode OK — SQL bug fixed, full dashboard** |
 | **2.3.0** | **21 Mei 2026** | **Seed data master tables — 200+ records imported** |
+| **2.4.0** | **21 Mei 2026** | **Operational seed data — 8 visits, lab, prescriptions, billing** |
 
 ### Perubahan di v1.1.0
 
@@ -142,3 +143,17 @@ Proyek ini mendokumentasikan dan melakukan Dockerisasi terhadap aplikasi **mLITE
 - **Evidence**: Dashboard screenshot with seed data
 - **Note**: `paket_operasi` required 34 columns — fixed column count mismatch (omloop4/omloop5 added)
 - **Note**: Import uses `INSERT IGNORE` to skip duplicate key errors from existing data
+
+### Perubahan di v2.4.0
+
+- **New**: `docker/operational_seed.sql` — data dummy transaksional untuk simulasi operasional 4 hari
+- **New**: 8 kunjungan pasien (reg_periksa) dengan variasi poli, dokter, cara bayar, dan diagnosis
+- **New**: 7 pemeriksaan rawat jalan (pemeriksaan_ralan) dengan SOAP lengkap
+- **New**: 8 diagnosa pasien (diagnosa_pasien) — DM Tipe 2, Diare, Hernia, KB, Hipertensi, LBP (2), ISK
+- **New**: 8 tindakan dokter rawat jalan (rawat_jl_dr) — konsultasi, pemeriksaan rutin, infus
+- **New**: 7 resep obat (14 item) — Metformin, Amlodipine, Paracetamol, Cefixime, Ibuprofen, Captopril, dll
+- **New**: 6 pemeriksaan lab (17 detail hasil) — Darah lengkap, GDS, Kolesterol, Asam Urat
+- **New**: 1 rawat inap (kamar_inap) — Dewi Lestari di Kamar Melati 1
+- **New**: 8 billing records (mlite_billing)
+- **Fixed**: `pemeriksaan_ralan` — ditambahkan kolom `evaluasi` yang sebelumnya terlewat
+- **Updated**: `TEST_REPORT.md` — test cases P-29 to P-38, skenario kunjungan, coverage table

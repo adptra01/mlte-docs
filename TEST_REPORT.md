@@ -5,8 +5,8 @@
 | Runtime | Test Case | Pass | Fail | Blocked | Coverage |
 |---------|-----------|------|------|---------|----------|
 | Docker | 21 | 21 | 0 | 0 | 100% |
-| Podman | 28 | 28 | 0 | 0 | 100% |
-| **Total** | **49** | **49** | **0** | **0** | **100%** |
+| Podman | 40 | 40 | 0 | 0 | 100% |
+| **Total** | **61** | **61** | **0** | **0** | **100%** |
 
 **Kesimpulan**: mLITE berhasil di-containerize dan berfungsi normal di Docker maupun Podman. Tidak ada perbedaan perilaku signifikan antara kedua runtime.
 
@@ -200,7 +200,7 @@ Seed data (`docker/seed_data.sql`) berisi data dummy komprehensif untuk seluruh 
 | **Login** | N/A | ✅ admin/admin berhasil |
 | **Root cause** | MySQL dump not SQLite-compatible | SQL syntax error at line 1646 (`'manufacture_date'` instead of `` `manufacture_date` ``) |
 
-**Kesimpulan**: SQLite mode di mLITE v6.3.0 memiliki bug — MySQL dump tidak sepenuhnya kompatibel dengan SQLite. Mode MySQL adalah primari driver yang didukung penuh. SQL dump original juga memiliki syntax error yang menyebabkan import MySQL gagal di line 1646.
+**Kesimpulan**: SQLite mode di mLITE v6.3.0 memiliki bug — MySQL dump tidak sepenuhnya kompatibel dengan SQLite. Mode MySQL adalah primary driver yang didukung penuh. SQL dump original juga memiliki syntax error yang menyebabkan import MySQL gagal di line 1646.
 
 ---
 
@@ -233,6 +233,59 @@ Seed data (`docker/seed_data.sql`) berisi data dummy komprehensif untuk seluruh 
 | ERR-06 | Both | SQLite mode tidak berfungsi penuh | HIGH | Known | MySQL dump tidak kompatibel dengan SQLite; gunakan MySQL mode |
 | ERR-07 | Both | Seed data `paket_operasi` column count mismatch | MEDIUM | Fixed | Tabel memiliki 34 kolom, seed memiliki 32 — ditambahkan omloop4, omloop5 (value 0) |
 | ERR-08 | Both | `Get-Content \| podman exec` pipe tidak berfungsi di Windows | LOW | Workaround | Copy file ke container via `podman cp`, lalu source via shell redirect `<` |
+| ERR-09 | Both | `pemeriksaan_ralan` seed missing `evaluasi` column | MEDIUM | Fixed | INSERT missing evaluasi value — menambahkan 1 kolom di tiap row |
+
+---
+
+### 2.11 Operational Seed Data
+
+Data transaksional untuk simulasi operasional harian mLITE selama 4 hari (18-21 Mei 2026).
+
+| ID | Langkah | Hasil | Bukti |
+|----|---------|-------|-------|
+| P-29 | Import `operational_seed.sql` | `mysql mlite_db < /tmp/operational_seed.sql` | ✅ PASS — 0 errors |
+| P-30 | Verify reg_periksa (registrasi) | 8 kunjungan | ✅ PASS — 4 hari, variasi poli & cara bayar |
+| P-31 | Verify pemeriksaan_ralan (pemeriksaan) | 7 pemeriksaan ralan | ✅ PASS — 1 ranap |
+| P-32 | Verify diagnosa_pasien | 8 diagnosa | ✅ PASS — E11, A09, K40, Z30, I10, M545, N390 |
+| P-33 | Verify rawat_jl_dr (tindakan) | 8 tindakan dokter | ✅ PASS — konsultasi + tindakan |
+| P-34 | Verify resep_obat & resep_dokter | 7 resep, 14 item obat | ✅ PASS — variasi obat |
+| P-35 | Verify periksa_lab + detail | 6 pemeriksaan, 17 detail | ✅ PASS — GDS, Darah, Kolesterol, Asam Urat |
+| P-36 | Verify kamar_inap (rawat inap) | 1 pasien rawat inap | ✅ PASS — Dewi Lestari, Melati 1 |
+| P-37 | Verify mlite_billing | 8 billing records | ✅ PASS — rate tiap kunjungan |
+| P-38 | Cross-table integrity | Semua FK valid | ✅ PASS — no orphan records |
+
+**Skenario Kunjungan**:
+
+| # | Tanggal | Jam | Pasien | Poli | Dokter | Diagnosis | Cara Bayar |
+|---|---------|-----|--------|------|--------|-----------|------------|
+| 1 | 18 Mei | 08:15 | Slamet Riyadi (34th) | Umum | dr. Siti Rahmawati, Sp.PD | DM Tipe 2 (E11) | BPJS |
+| 2 | 18 Mei | 09:30 | Maya Sari (16th) | Anak | dr. Budi Santoso, Sp.A | Diare (A09) | Umum |
+| 3 | 19 Mei | 10:00 | Budi Santoso (46th) | Bedah | dr. Hendra Wijaya, Sp.B | Hernia (K40) | JKN |
+| 4 | 19 Mei | 11:15 | Ani Rahmawati (31th) | Kandungan | dr. Maya Anggraini, Sp.OG | KB Consult (Z30) | Perush |
+| 5 | 20 Mei | 07:45 | Sumiati (51th) | Umum | dr. Siti Rahmawati, Sp.PD | Hipertensi (I10) | BPJS |
+| 6 | 20 Mei | 13:30 | Supardi (29th) | Saraf | dr. Nurul Hidayah, Sp.S | LBP (M545) | BPJS |
+| 7 | 21 Mei | 08:00 | Rudi Hartono (37th) | Umum | dr. Fitriani Rahmah | LBP (M545) | Umum |
+| 8 | 21 Mei | 14:00 | Dewi Lestari (38th) | IGD | dr. Ataaka Muhammad | ISK (N390) → Ranap | BPJS |
+
+**Data Coverage Operasional**:
+
+| Group | Table | Rows | Variasi |
+|-------|-------|------|---------|
+| Kunjungan | reg_periksa | 8 | 4 hari, 6 poli, 7 dokter, 4 cara bayar |
+| Pemeriksaan | pemeriksaan_ralan | 7 | DM, diare, hernia, KB, hipertensi, LBP (2) |
+| Diagnosis | diagnosa_pasien | 8 | 7 diagnosis berbeda |
+| Tindakan | rawat_jl_dr | 8 | Pemeriksaan rutin, konsultasi, infus |
+| Resep | resep_obat + resep_dokter | 7 + 14 | 9 jenis obat berbeda |
+| Laboratorium | periksa_lab + detail | 6 + 17 | Darah, GDS, kolesterol, asam urat |
+| Rawat Inap | kamar_inap | 1 | Melati 1, masih dirawat |
+| Pembayaran | mlite_billing | 8 | Billing per kunjungan |
+
+**Catatan Implementasi**:
+- File: `docker/operational_seed.sql` — terpisah dari master data
+- Data transaksional menggunakan foreign key yang merujuk ke master data existing
+- Format `no_rawat`: `YYYY-MM-DD-NNNNN` (17 karakter)
+- Format `no_resep`: `YYYYMMDDNNNNNN` (14 karakter)
+- INSERT IGNORE untuk menghindari konflik jika di-import ulang
 
 ---
 
