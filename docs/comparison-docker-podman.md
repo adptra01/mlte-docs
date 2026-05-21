@@ -167,6 +167,38 @@ podman run -v ./data:/var/lib/mysql:Z mysql:8.0
 
 ---
 
+## 9. Optimasi Khusus Runtime
+
+Beberapa optimasi di proyek ini bersifat cross-runtime, tapi ada perbedaan cara akses:
+
+### Redis Session Management
+
+| Operasi | Docker | Podman |
+|---------|--------|--------|
+| Check Redis | `docker exec mlite-redis-1 redis-cli -a pass PING` | `podman exec mlite-redis-1 redis-cli -a pass PING` |
+| List sessions | `docker exec mlite-redis-1 redis-cli -a pass KEYS "mlite_session_*"` | `podman exec mlite-redis-1 redis-cli -a pass KEYS "mlite_session_*"` |
+| Flush all sessions | `docker exec mlite-redis-1 redis-cli -a pass FLUSHALL` | `podman exec mlite-redis-1 redis-cli -a pass FLUSHALL` |
+
+### MySQL Tuning Verification
+
+| Operasi | Docker | Podman |
+|---------|--------|--------|
+| Check buffer pool | `docker exec mlite-mysql-1 mysql -uroot -ppass -e "SHOW VARIABLES LIKE 'innodb_buffer_pool_size'"` | `podman exec mlite-mysql-1 mysql -uroot -ppass -e "SHOW VARIABLES LIKE 'innodb_buffer_pool_size'"` |
+| Check indexes | `docker exec mlite-mysql-1 mysql -uroot -ppass mlite_db -e "SELECT TABLE_NAME, INDEX_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA='mlite_db'"` | `podman exec mlite-mysql-1 mysql -uroot -ppass mlite_db -e "SELECT TABLE_NAME, INDEX_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA='mlite_db'"` |
+
+### PHP Config
+
+| Operasi | Docker | Podman |
+|---------|--------|--------|
+| Check OPcache | `docker exec mlite-php-1 php -i \| grep opcache.` | `podman exec mlite-php-1 php -i \| grep opcache.` |
+| Check APCu | `docker exec mlite-php-1 php -i \| grep apcu.` | `podman exec mlite-php-1 php -i \| grep apcu.` |
+| Check Redis session | `docker exec mlite-php-1 php -i \| grep session.save_path` | `podman exec mlite-php-1 php -i \| grep session.save_path` |
+| Reload PHP-FPM | `docker exec mlite-php-1 kill -USR2 1` | `podman exec mlite-php-1 kill -USR2 1` |
+
+**Kesimpulan**: Semua command identik — bedanya hanya `docker` vs `podman`.
+
+---
+
 ## Tabel Perbandingan Command
 
 | Operasi | Docker | Podman |

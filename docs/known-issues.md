@@ -16,6 +16,9 @@
 | Container restart loop | Docker, Podman | HIGH | Cek log: `docker compose logs php`; biasanya error di .env config |
 | Port 8088 already in use | Docker, Podman | MEDIUM | Ubah `APP_PORT` di `.env` |
 | Blank page / WSOD | Docker, Podman | HIGH | Set `DEVMODE=true` di `.env`; cek PHP error log |
+| Redis connection refused | Docker, Podman | MEDIUM | Pastikan Redis container running; check password cocok |
+| Session not persisting (Redis) | Docker, Podman | HIGH | Cek `session.save_handler=redis` dan `session.save_path` di php.ini |
+| PHP-FPM tidak reload config | Docker, Podman | LOW | Gunakan `kill -USR2 1` di container PHP, atau restart container |
 
 ## Podman Specific
 
@@ -25,6 +28,7 @@
 | Port < 1024 tidak bisa di-rootless | LOW | Gunakan port > 1024; atau jalankan dengan `sudo podman` |
 | Image pull gagal dengan format `image:tag` | LOW | Gunakan format lengkap `docker.io/image:tag` |
 | SELinux blocking container | MEDIUM | Set `:Z` label; atau `sudo setenforce 0` (tidak disarankan) |
+| Warning "volume is not writable" untuk Redis data | LOW | Set permission: `chown 999:999 /path/to/redis_data` (uid redis) |
 
 ## Docker Specific
 
@@ -44,6 +48,17 @@
 | Halaman admin 404 | MEDIUM | Akses dengan trailing slash: `/admin/`; pastikan `.htaccess` ada (Apache) |
 | Integrasi BPJS error | MEDIUM | Cek konfigurasi API BPJS di settings; pastikan koneksi internet |
 
+## Optimization Issues
+
+| Issue | Severity | Workaround |
+|-------|----------|------------|
+| PHP JIT buffer_size=0 (JIT aktif tapi tanpa buffer) | LOW | Set `opcache.jit_buffer_size=256M` di php.ini dan restart PHP-FPM |
+| Gzip tidak terlihat di response headers (PowerShell) | LOW | PowerShell auto-decompresses gzip; gunakan `curl --compressed` atau raw socket |
+| Docker compose warning "REDIS_PASSWORD not set" | LOW | Pastikan `REDIS_PASSWORD` ada di `.env` file yang benar (docker/.env) |
+| MySQL world-writable config ignored | MEDIUM | Set `chmod 644` pada `my.cnf`; MySQL ignore file dengan permission 777 |
+| APCu CLI mode disabled | LOW | `apcu.enable_cli=0` — hanya untuk FPM; CLI mode tidak perlu APCu |
+| Redis AOF rewrite performance spike | LOW | AOF rewrite terjadi di background; tidak terasa untuk aplikasi kecil |
+
 ## Status Resolusi
 
 | Issue | Status | Tanggal Resolusi |
@@ -56,3 +71,6 @@
 | Case-sensitive file collision | ⚠️ Known, unresolved (upstream) | - |
 | Multi-stage build | ⏳ Planned | - |
 | Image size optimization | ⏳ Planned | - |
+| Redis session integration | ✅ Implemented | 21 May 2026 |
+| MySQL indexing & tuning | ✅ Implemented | 21 May 2026 |
+| PHP JIT buffer_size | ⚠️ Config documented, butuh rebuild | 21 May 2026 |

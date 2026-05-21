@@ -15,18 +15,57 @@ SIM RS/Klinik/Puskesmas lengkap — rawat jalan, rawat inap, IGD, farmasi, keuan
 
 ## Quick Start
 
-### Docker
+### Basic (tanpa optimasi)
 ```bash
-git clone https://github.com/basoro/mlite.git && cd mlite
+git clone https://github.com/basoro/mlite.git && cd mlite/docker
+cp .env.example .env
 docker compose up -d
 # http://localhost:8088 | admin/admin
 ```
 
-### Podman
+### Optimized (full stack — Redis, MySQL tuning, gzip, opcache)
 ```bash
-git clone https://github.com/basoro/mlite.git && cd mlite
-podman-compose up -d
+git clone https://github.com/basoro/mlite.git && cd mlite/docker
+cp .env.test .env
+docker compose -f compose.test.yaml up -d
 # http://localhost:8088 | admin/admin
+```
+
+## Optimization Matrix
+
+| Layer | Component | Basic | Optimized | Impact |
+|-------|-----------|-------|-----------|--------|
+| **Web Server** | Nginx gzip | Off | **On** (compression ~71%) | Bandwidth hemat |
+| **Web Server** | Static caching | None | **30d expires** + immutable | Cache browser |
+| **PHP** | OPcache | Default (8MB) | **128MB** + JIT tracing | Bytecode di RAM |
+| **PHP** | APCu | ❌ | **64MB** user cache | Cache data aplikasi |
+| **PHP** | PHP-FPM tuning | Default | **pm.max_children=15** | Concurrency |
+| **PHP** | JIT buffer | 0 (disabled) | **256MB** (config, butuh rebuild) | CPU-bound speedup |
+| **PHP** | CI_ENVIRONMENT | development | **production** | Debug toolbar mati |
+| **PHP** | Composer autoload | Standard | **Optimized** (768 classes) | Class loading |
+| **Session** | Session storage | File-based | **Redis 7.4** + TTL 7200s | In-memory |
+| **Database** | Indexes | Minimal | **7 indexes** on 5 key tables | Query 10-100x |
+| **Database** | InnoDB buffer | 128MB | **256MB** | Cache tabel/index |
+| **Database** | tmp_table_size | 16MB | **64MB** | Temp query speed |
+| **Database** | join_buffer | 256KB | **512KB** | JOIN performance |
+| **Seed Data** | Master tables | ❌ | **25 pasien, 11 dokter, 28 kamar, dll** | Demo siap pakai |
+| **Seed Data** | Operational | ❌ | **8 visits, lab, prescriptions, billing** | Skenario lengkap |
+
+## Architecture (Optimized)
+
+```
+                                          ┌─────────────────────┐
+  Browser ──▶ Nginx (gzip + cache 30d) ──▶│   PHP-FPM 8.1       │──▶ MySQL 8.0 (tuned)
+               :80                         │   ├── OPcache 128MB │      ├── buffer_pool 256M
+                                           │   ├── APCu 64MB     │      ├── 7 indexes
+                                           │   ├── JIT tracing   │      ├── tmp_table 64M
+                                           │   └── Redis session │      └── join_buffer 512K
+                                           └─────────┬───────────┘
+                                                     │
+                                              ┌──────▼──────┐
+                                              │  Redis 7.4  │
+                                              │  (sessions) │
+                                              └─────────────┘
 ```
 
 ## Dokumentasi Lengkap
@@ -56,6 +95,22 @@ mlite-docker-podman-project/
 └── scripts/       # Script automation
 ```
 
+## File Penting di `mlite/docker/`
+
+| File | Kegunaan |
+|------|----------|
+| `docker-compose.yaml` | Basic compose (nginx + php + mysql) |
+| `compose.test.yaml` | Optimized compose (+redis, mysql tuning, seed data) |
+| `.env` | Environment variables untuk basic compose |
+| `.env.test` | Environment variables untuk optimized compose |
+| `php.quick.Dockerfile` | PHP 8.1 dengan APCu + Redis + opcache + FPM tuning |
+| `php/redis-session.ini` | Redis session handler config |
+| `nginx/default.conf` | Nginx config dengan gzip + static caching |
+| `mysql/my.cnf` | MySQL InnoDB tuning (buffer pool 256M) |
+| `seed_data.sql` | Master tables dummy data (635 rows) |
+| `operational_seed.sql` | Transactional data (194 rows) |
+| `mlite_db_dump_with_seed.sql` | Full DB dump with seed data (439 KB) |
+
 ## Persyaratan Sistem
 
 | Komponen | Kebutuhan |
@@ -63,6 +118,7 @@ mlite-docker-podman-project/
 | Web Server | Apache 2.2+ (`mod_rewrite`) atau Nginx |
 | PHP | 7.4 – 8.3+ |
 | Database | MySQL 5.7+ / MariaDB 10+ / SQLite |
+| Redis (opsional) | 7.x (untuk session storage) |
 | Composer | Wajib untuk dependensi PHP |
 | Container | Docker 20.10+ atau Podman 4.0+ |
 
