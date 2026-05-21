@@ -5,8 +5,8 @@
 | Runtime | Test Case | Pass | Fail | Blocked | Coverage |
 |---------|-----------|------|------|---------|----------|
 | Docker | 21 | 21 | 0 | 0 | 100% |
-| Podman | 18 | 18 | 0 | 0 | 100% |
-| **Total** | **39** | **39** | **0** | **0** | **100%** |
+| Podman | 28 | 28 | 0 | 0 | 100% |
+| **Total** | **49** | **49** | **0** | **0** | **100%** |
 
 **Kesimpulan**: mLITE berhasil di-containerize dan berfungsi normal di Docker maupun Podman. Tidak ada perbedaan perilaku signifikan antara kedua runtime.
 
@@ -140,7 +140,47 @@
 | docker-mysql-1 | 1.34% | 423.6 MB |
 | **Total** | **26.42%** | **446.92 MB** |
 
-### 2.8 Cross-Runtime
+### 2.9 Seed Data Import
+
+Seed data (`docker/seed_data.sql`) berisi data dummy komprehensif untuk seluruh master table mLITE, digunakan untuk pengujian fungsional dan demo aplikasi.
+
+| ID | Langkah | Hasil | Bukti |
+|----|---------|-------|-------|
+| P-23 | Copy seed_data.sql ke container | `podman cp seed_data.sql docker-mysql-1:/tmp/` | ✅ PASS |
+| P-24 | Import via `mysql < seed_data.sql` | `mysql mlite_db < /tmp/seed_data.sql` | ✅ PASS (INSERT IGNORE untuk menghindari duplicate key) |
+| P-25 | Verify pasien | `SELECT COUNT(*) FROM pasien` | ✅ PASS — 25 rows |
+| P-26 | Verify dokter | `SELECT COUNT(*) FROM dokter` | ✅ PASS — 11 rows |
+| P-27 | Verify databarang | `SELECT COUNT(*) FROM databarang` | ✅ PASS — 22 rows |
+| P-28 | Verify penyakit | `SELECT COUNT(*) FROM penyakit` | ✅ PASS — 30 rows |
+
+**Data Coverage**:
+
+| Group | Table | Rows | Keterangan |
+|-------|-------|------|------------|
+| Wilayah | propinsi | 10 | DKI Jakarta, Jabar, Jateng, Jatim, Banten, Sumut, Sulsel, Kalsel, DIY, Bali |
+| Wilayah | kabupaten | 10 | Kota masing-masing propinsi |
+| Wilayah | kecamatan | 22 | 2+ kecamatan per kabupaten |
+| Wilayah | kelurahan | 19 | 2+ kelurahan per kecamatan |
+| SDM | pegawai | 22 | Dokter, perawat, bidan, admin, farmasi, laborat, radiografer, dll |
+| SDM | petugas | 22 | Sama dengan pegawai (dual table) |
+| SDM | dokter | 11 | Spesialisasi: umum, anak, bedah, obgyn, mata, THT, saraf, gigi, jiwa, forensik, kulit |
+| Pasien | pasien | 25 | Data demografi lengkap |
+| Fasilitas | poliklinik | 15 | Umum, gigi, KIA, MTBS, gizi, KB, imunisasi, lansia, TB, HIV, VCT, laborat, farmasi, gawat darurat, IGD |
+| Fasilitas | kamar | 28 | Kelas VIP, VVIP, 1, 2, 3, Rawat Jalan, ICU, NICU, PICU |
+| Obat | databarang | 22 | Obat generik & non-generik dengan stok, harga beli/jual |
+| Medis | penyakit | 30 | ICD-10 diagnosis (A00-Z99) |
+| Medis | tarif_perawatan | 18 | Tindakan medis per poliklinik |
+| Medis | paket_operasi | 6 | Katarak, SC, hernia, kuretase, appendictomy, fraktur |
+| Keuangan | rekening | 12 | Akun akuntansi (kas, bank, piutang, modal, dll) |
+
+**Catatan Implementasi**:
+- File: `docker/seed_data.sql` — disimpan di source tree mLITE, ter-volume mount ke `/var/www/html/docker/`
+- SQL dump asli (`mlite_db.sql`) digunakan untuk struktur tabel (234 tabel)
+- Seed data hanya mengisi master/reference tables — tidak mempengaruhi data transaksional
+- Import menggunakan `INSERT IGNORE` untuk melewati duplicate key errors dari data existing
+- Beberapa tabel referensi di seed SQL tidak ditemukan di DB (bangunan, inventaris_kategori, dll) — struktur tabel mungkin berbeda versi
+
+### 2.10 Cross-Runtime
 
 | ID | Nama | Langkah | Hasil | Notes |
 |----|------|---------|-------|-------|
@@ -191,6 +231,8 @@
 | ERR-04 | Podman | PHP ext-gd/ext-zip compilation slow | MEDIUM | Accepted | ~5 min build time from source |
 | ERR-05 | Both | SQL dump syntax error line 1653 | HIGH | Fixed | `'manufacture_date'` → `` `manufacture_date` `` — caused all tables after line 1646 to be missing |
 | ERR-06 | Both | SQLite mode tidak berfungsi penuh | HIGH | Known | MySQL dump tidak kompatibel dengan SQLite; gunakan MySQL mode |
+| ERR-07 | Both | Seed data `paket_operasi` column count mismatch | MEDIUM | Fixed | Tabel memiliki 34 kolom, seed memiliki 32 — ditambahkan omloop4, omloop5 (value 0) |
+| ERR-08 | Both | `Get-Content \| podman exec` pipe tidak berfungsi di Windows | LOW | Workaround | Copy file ke container via `podman cp`, lalu source via shell redirect `<` |
 
 ---
 
@@ -203,6 +245,8 @@
 5. **Windows case-insensitive FS** — File duplikat case-sensitive bermasalah
 6. **No multi-stage build** — Image masih besar
 7. **Nginx build dilewati** — `image: nginx:alpine` di compose mencegah build ulang; perlu volume mount config
+8. **Seed data partial** — Beberapa tabel referensi dalam seed SQL tidak ditemukan di DB (bangunan, inventaris_kategori, dll), kemungkinan karena perbedaan versi antara `mlite_db.sql` dan struktur tabel yang dibuat oleh installer mLITE
+9. **Windows pipe workaround** — `Get-Content \| podman exec` tidak berfungsi di PowerShell; perlu `podman cp` + shell redirect
 
 ---
 

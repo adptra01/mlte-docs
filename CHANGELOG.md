@@ -84,6 +84,7 @@ Proyek ini mendokumentasikan dan melakukan Dockerisasi terhadap aplikasi **mLITE
 | **2.0.0** | **21 Mei 2026** | **Restruktur total sesuai format Fase A-I** |
 | **2.1.0** | **21 Mei 2026** | **Live Podman test — installer page verified** |
 | **2.2.0** | **21 Mei 2026** | **MySQL mode OK — SQL bug fixed, full dashboard** |
+| **2.3.0** | **21 Mei 2026** | **Seed data master tables — 200+ records imported** |
 
 ### Perubahan di v1.1.0
 
@@ -132,3 +133,12 @@ Proyek ini mendokumentasikan dan melakukan Dockerisasi terhadap aplikasi **mLITE
 - **Security**: `install.php` aman di-rename (app tidak redirect ke sana setelah MySQL terkonfigurasi)
 - **Evidence**: Screenshot dashboard login ke `evidence/screenshots/dashboard.png`
 - **Login**: admin/admin berhasil — dashboard mLITE tampil
+
+### Perubahan di v2.3.0
+
+- **New**: `docker/seed_data.sql` — data dummy komprehensif untuk master tables (25 pasien, 11 dokter, 22 pegawai, 22 petugas, 22 databarang, 15 poliklinik, 28 kamar, 30 penyakit, 10 propinsi, 22 kecamatan, 19 kelurahan, plus tarif, rekening, akun bank, dll)
+- **New**: Seed data imported dan verified di MySQL container
+- **Updated**: `TEST_REPORT.md` — seed data test cases (P-23 to P-28), data coverage table
+- **Evidence**: Dashboard screenshot with seed data
+- **Note**: `paket_operasi` required 34 columns — fixed column count mismatch (omloop4/omloop5 added)
+- **Note**: Import uses `INSERT IGNORE` to skip duplicate key errors from existing data
